@@ -3,7 +3,7 @@ Servzi REST per il recupero dei dati toponomastici, in particolare i toponimi de
 Comune di Casalecchio di Reno attraverso un set di URI pubbliche e accessibili tramite richieste HTTP/S:GET.
 
 Il modulo REST prevede template che restituiscono "array" di oggetti json e template che restituiscono oggetti json con dati di dettaglio per una entità.
-I primi servono a recuperare le liste degli oggetti e relativi id, i secondi servono a recuperare dati di dettaglio per una entità specifica utilizzando l'id ricavato dai primi.
+I primi servono a recuperare le liste degli oggetti e relativi id i secondi servono a recuperare dati di dettaglio per una entità specifica utilizzando l'id ricavato dai primi.
 
 Esistono template specificatamente dedicati alla toponomastica **tps_xxx**, ai civici **ncv_xxx** e servizi espressamente dedicati alle feature geometriche **f_geo_xxx** 
 
@@ -20,7 +20,7 @@ Esistono template specificatamente dedicati alla toponomastica **tps_xxx**, ai c
 # Dipendenze
 - Strutture dati memorizzate in DB Oracle.
 - Ambiente Oracle REST Data Services (ORDS) configurato.
-- DZ_JSON package usato per trsformare in oggetti geoJson gli oggetti SDO. Necessario in versioni oracle pre 19c https://github.com/pauldzy/DZ_JSON
+- DZ_JSON package usato per trsformare in oggetti geoJson gli oggetti SDO. Necessario solo nelle versioni oracle pre 19c
 
 La configurazione operativa utilizza:
 - Oracle Database 11g Enterprise Edition Release 11.2.0.4.0 - 64bit Production 
@@ -53,32 +53,30 @@ I servizi utilizzano il metodo HTTP:GET e tornano la response in josn
 | URI template?parameters | Descrizione |
 | --- | --- |
 | index | Iindice dei servizi aggiornato, con commenti. |
-| tps_list?codcom=codicecatastaleconume | Lista dei toponimi. (a) |
-| tps_list_detail?uidn=idnum | x |
-| tps_describe?uidn=idnum  | x |
-| ncv_list?uidn=idnum | x |
-| ncv_list_detail?uidn=idnum | x |
-| ncv_describe?uidn=idnum | x |
-| f_geojson?uidn=idnum\[&class=codiceclassefeature\] | Geometria della feature in geojson. (2) |
+| tps_list?codcom=codicecatastaleconume | Lista sinteetica dei toponimi TPS gestita dal ente **codicecatastaleconume**. (a) |
+| tps_list_detail?codcom=codicecatastaleconume | Lista dettagliata dei toponimi TPS. |
+| tps_describe?uidn=idnum  | Dettaglio del singolo toponimo **idnum** |
+| ncv_list?uidn=idnum | Lista sintetica dei civici afferenti il toponimo **idnum** |
+| ncv_list_detail?uidn=idnum | Lista dettagliata dei civici afferenti il toponimo **idnum** |
+| ncv_describe?uidn=idnum | Dettaglio del singolo civico **idnum** |
+| f_geojson?uidn=idnum\[&class=codiceclassefeature\] | Geometria della feature in geojson. (b) |
 | f_wkt?uidn=idnum\[&class=codiceclassefeature\] | Geometria della feature in wkt. (b) |
 
 ---
 
-(a) Per il Comune di Casalecchio di Reno il codice comunale e b880
-
-(b) Parametro opzionale, valore della classe GeoUML della componente spaziale richiesta, se assente torna di default il percorso sintetico per una entità relativa al dominio TPS, la posizione del civico per i domini NCV. 
-
+(a) Per il Comune di Casalecchio di Reno il codice comunale e b880  
+(b) Parametro opzionale, valore della classe GeoUML della componente spaziale richiesta, se assente torna di default il percorso sintetico per una entità relativa al dominio TPS, la posizione del civico per i domini NCV.  
 le classi attualmente pubblicate sono:
 - 030101101 ROU_S Percorso analitico per la classe TPS
 - 030101103 ROU_S Percorso sintetico per la classe TPS
-- 03010201  POS posizione del civico per la classe NCV
+- 03010201  POS   Posizione del civico per la classe NCV
 
 # Esempi
  
 ### Ottenere la lista dei toponimi del comune
 Chiamo il servizio rest  passando il parametro codcom valorizzato al codice belfiore del Comune.
 HTTTP method:POST uri:https://sportellounico.comune.casalecchio.bo.it/ords/casa/openpa/sit/tpn/tps_list?codcom=b880
-la respons è un oggetto json che contiene la lista dei singoli toponimi, con gli uid che posso usare per avere dettagli, geometrie, elenco civici....
+la response è un oggetto json che contiene la lista dei singoli toponimi, con gli uid che posso usare per avere dettagli, geometrie, elenco civici....
 
 ~~~ 
 ... frammento json dell array per una via...
@@ -92,8 +90,8 @@ la respons è un oggetto json che contiene la lista dei singoli toponimi, con gl
 "denominazione": "DEI MILLE"
 }
 ~~~
-Usando il servizio di dettaglio https://sportellounico.comune.casalecchio.bo.it/ords/casa/openpa/sit/tpn/tps_list_detail?codcom=b880
-ottengo nel json anche le uri formattate per richiedere i dettagli e le geometrie
+Usando il servizio di dettaglio https://sportellounico.comune.casalecchio.bo.it/ords/casa/openpa/sit/tpn/tps_list_detail?codcom=b880  
+ottengo nel json anche le uri già formattate dei template per i dettagli e  per le geometrie geojson
 ~~~
 {
 "uuid": "0da057d1-84e9-488d-e053-980a10acdb2e",
@@ -142,9 +140,10 @@ Valorizzando il parametro class=030101101 si otterrebbero le coordiante del perc
 "properties":{"UUID":18112512612025005584817680991306701614,"SRID":4326,
 "GEO_UML_CLASS":030101101}} 
 ~~~
-Per ottenere le stesse cose in formato wkt uso il template f_wkt.
+Per ottenere le stesse cose in formato wkt uso il template **f_wkt**.
 
-__il template f_geojson puo essere facilmente utilizzati anche all'interno di codice js, ad esempio in pagine con mappe leaflet o openLayer per ottenere le coordinate di un toponimo da visulizzare. Per questo motivo le coordinate restituite sono volutamnte in EPSG:4326__
+Il template **f_geojson** puo essere facilmente utilizzato anche all'interno di codice js, ad esempio in pagine con _mappe leaflet o _openLayer_ per ottenere le coordinate di un toponimo da visualizzare.  
+_Per questo motivo le coordinate restituite sono volutamnte in EPSG:4326_
 
 Per i civici si possono usare i template specifici.
 il servizio per le feature geometriche è sempre lo stesso in quanto passando uuid è garantita l'univocità della feature indipendendentemente dalla classe.
@@ -152,6 +151,9 @@ il servizio per le feature geometriche è sempre lo stesso in quanto passando uu
 # Maintainer
 
 * Luca Pomi - Comune di Casalechio di Reno.
+
+# Specifiche
+Nella cartella **spec** sono presenti json di esempio relativi ai vari template e un  foglio (in lavorazione) per dettagliare i json nei vari casi.
 
 # Licenza 
 [Creative Commons - Attribuzione 4.0 Internazionale (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.it)
